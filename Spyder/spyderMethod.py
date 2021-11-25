@@ -21,6 +21,7 @@ token_url = 'https://eogauth.mines.edu/auth/realms/master/protocol/openid-connec
 response = requests.post(token_url, data=params, verify=False)
 access_token_dict = json.loads(response.text)
 access_token = access_token_dict.get('access_token')
+# 自行创建，需要有一个初始行 格式为’YYmmdd‘
 download_list = 'E:/GCG_storage/storage_code/File_PyCharm/nightLight/data/download_list.txt'
 auth = 'Bearer ' + access_token
 headers = {'Authorization': auth}
