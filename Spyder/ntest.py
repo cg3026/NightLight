@@ -3,6 +3,7 @@ import json
 import os
 from contextlib import closing
 import time
+import datetime
 from Spyder.logutil import errorLogs
 requests.packages.urllib3.disable_warnings()
 
@@ -17,7 +18,7 @@ params = {
         }
 finish_list = []
 token_url = 'https://eogauth.mines.edu/auth/realms/master/protocol/openid-connect/token'
-response = requests.post(token_url, data=params)
+response = requests.post(token_url, data=params, verify=False)
 access_token_dict = json.loads(response.text)
 access_token = access_token_dict.get('access_token')
 download_list = 'E:/GCG_storage/storage_code/File_PyCharm/nightLight/data/download_list.txt'
@@ -25,9 +26,14 @@ auth = 'Bearer ' + access_token
 headers = {'Authorization': auth}
 with open(download_list, 'r') as d:
     lines = d.readlines()[-1]
-current_time = time.strftime('%Y%m%d', time.localtime(time.time()))
-for download_time in range(int(lines)+1, int(current_time)+1):
-    data_url = 'https://eogdata.mines.edu/nighttime_light/nightly/rade9d/SVDNB_npp_d' + str(download_time) + '.rade9d.tif'
+d.close()
+start = lines[0:4] + '-' + lines[4:6] + '-' + lines[6:]
+end = datetime.datetime.now().strftime("%Y-%m-%d")
+datestart = datetime.datetime.strptime(start, '%Y-%m-%d')
+dateend = datetime.datetime.strptime(end, '%Y-%m-%d')
+while datestart < dateend:
+    datestart += datetime.timedelta(days=1)
+    data_url = 'https://eogdata.mines.edu/nighttime_light/nightly/rade9d/SVDNB_npp_d' + str(datestart.strftime('%Y%m%d')) + '.rade9d.tif'
     output_file = 'E:/GCG_storage/storage_code/File_PyCharm/nightLight/data/' + os.path.basename(data_url)
     with closing(requests.get(data_url, headers=headers, stream=True)) as response:
         if not response.status_code == '404':
@@ -40,14 +46,13 @@ for download_time in range(int(lines)+1, int(current_time)+1):
                     data_count = data_count + len(data)
                     now_jd = (data_count / content_size) * 100
                     print("\r 文件下载进度：%d%%(%d/%d) - %s" % (now_jd, data_count, content_size, output_file), end="")
-            print(os.path.basename(data_url) + '下载完成')
+            f.close()
+            print("\n\033[32m" + os.path.basename(data_url) + '下载完成' + "\033[0m")
             log_record.saveLog(os.path.basename(data_url) + '下载完成')
-            finish_list.append(download_time)
+            with open(download_list, 'a') as d:
+                d.write(str(datestart.strftime('%Y%m%d')))
+            d.close()
         else:
-            print(os.path.basename(data_url) + '下载失败,错误码:' + response.status_code)
+            print("\n\033[35m" + os.path.basename(data_url) + '下载失败,错误码:' + response.status_code + "\033[0m")
             log_record.saveLog(os.path.basename(data_url) + '下载失败,错误码:' + response.status_code)
-d.close()
-with open(download_list, 'a') as d:
-    for list in finish_list:
-        d.write(str(list))
-d.close()
+    time.sleep(5)
