@@ -51,9 +51,10 @@ while datestart < dateend:
             print("\n\033[32m" + os.path.basename(data_url) + '下载完成' + "\033[0m")
             log_record.saveLog(os.path.basename(data_url) + '下载完成')
             with open(download_list, 'a') as d:
-                d.write(str(datestart.strftime('%Y%m%d')))
+                d.write("\n" + str(datestart.strftime('%Y%m%d')))
             d.close()
         else:
             print("\n\033[35m" + os.path.basename(data_url) + '下载失败,错误码:' + response.status_code + "\033[0m")
             log_record.saveLog(os.path.basename(data_url) + '下载失败,错误码:' + response.status_code)
     time.sleep(5)
+
